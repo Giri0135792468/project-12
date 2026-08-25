@@ -9,21 +9,11 @@ Learn how Kubernetes runs:
 
 ---
 
-## Project Structure
+# 1. Kubernetes Job
 
-```text
-project-12/
-└── k8s/
-    ├── namespace.yaml
-    ├── job.yaml
-    └── cronjob.yaml
-```
+A **Job** is used to run a task until it successfully completes.
 
----
-
-## Kubernetes Job
-
-A **Job** runs a task until it completes successfully.
+Unlike a Deployment, a Job does not keep the application running forever.
 
 ### Flow
 
@@ -32,36 +22,143 @@ Job
  ↓
 Creates Pod
  ↓
-Pod runs the command
+Pod runs the task
  ↓
-Task completes
+Task finishes
  ↓
-Pod status = Completed
+Pod = Completed
+ ↓
+Job = Complete
 ```
 
-Our Job printed:
+### Real-world examples
 
-```text
-Hello from Kubernetes Job
+* Database backup
+* Database migration
+* File processing
+* Report generation
+* Sending batch emails
+
+---
+
+## Job YAML
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+
+metadata:
+  name: hello-job
+  namespace: project-12
+
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+
+      containers:
+        - name: hello
+          image: busybox
+
+          command:
+            - /bin/sh
+            - -c
+            - echo "Hello from Kubernetes Job"; sleep 5
 ```
 
-After completion:
+### Important parts
 
-```text
-kubectl get jobs -n project-12
+```yaml
+kind: Job
 ```
 
-Output showed:
+Creates a Kubernetes Job.
+
+```yaml
+restartPolicy: Never
+```
+
+The container will not restart after finishing.
+
+```yaml
+echo "Hello from Kubernetes Job"; sleep 5
+```
+
+The container prints the message, waits 5 seconds, and finishes.
+
+---
+
+# 2. Kubernetes CronJob
+
+A **CronJob** automatically creates Jobs according to a schedule.
+
+### Flow
 
 ```text
-hello-job   Complete   1/1
+Scheduled Time
+      ↓
+CronJob
+      ↓
+Creates Job
+      ↓
+Job creates Pod
+      ↓
+Pod runs task
+      ↓
+Completed
+```
+
+### Real-world examples
+
+* Daily database backup
+* Hourly cleanup
+* Weekly reports
+* Scheduled data processing
+
+---
+
+## CronJob YAML
+
+```yaml
+apiVersion: batch/v1
+kind: CronJob
+
+metadata:
+  name: hello-cronjob
+  namespace: project-12
+
+spec:
+  schedule: "*/1 * * * *"
+
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+
+          containers:
+            - name: hello
+              image: busybox
+
+              command:
+                - /bin/sh
+                - -c
+                - echo "Hello from Kubernetes CronJob"
 ```
 
 ---
 
-## Kubernetes CronJob
+## Schedule
 
-A **CronJob** runs Jobs automatically according to a schedule.
+```yaml
+schedule: "*/1 * * * *"
+```
+
+Cron format:
+
+```text
+Minute Hour Day-of-Month Month Day-of-Week
+```
 
 Our schedule:
 
@@ -69,56 +166,28 @@ Our schedule:
 */1 * * * *
 ```
 
-Meaning:
+means:
 
 > Run every minute.
 
-### Flow
+---
 
-```text
-CronJob
-    ↓
-Scheduled time
-    ↓
-Creates Job
-    ↓
-Job creates Pod
-    ↓
-Pod executes task
-    ↓
-Completed
-```
+# Job vs CronJob
 
-Our CronJob printed:
-
-```text
-Hello from Kubernetes CronJob
-```
+| Job            | CronJob                     |
+| -------------- | --------------------------- |
+| Runs once      | Runs on a schedule          |
+| Creates a Pod  | Creates Jobs                |
+| Task completes | Creates new Jobs repeatedly |
 
 ---
 
-## Main Difference
+# Important Commands
 
-| Job                      | CronJob                     |
-| ------------------------ | --------------------------- |
-| Runs a task once         | Runs tasks on a schedule    |
-| Creates a Pod            | Creates Jobs                |
-| Pod completes after task | Jobs are created repeatedly |
-
----
-
-## Important Commands
-
-Apply all resources:
+Apply all YAML files:
 
 ```bash
 kubectl apply -f k8s/
-```
-
-Check all resources:
-
-```bash
-kubectl get all -n project-12
 ```
 
 Check Jobs:
@@ -127,10 +196,22 @@ Check Jobs:
 kubectl get jobs -n project-12
 ```
 
+Watch Jobs:
+
+```bash
+kubectl get jobs -n project-12 --watch
+```
+
 Check CronJobs:
 
 ```bash
 kubectl get cronjob -n project-12
+```
+
+Watch CronJobs:
+
+```bash
+kubectl get cronjob -n project-12 --watch
 ```
 
 Check Pods:
@@ -139,10 +220,46 @@ Check Pods:
 kubectl get pods -n project-12
 ```
 
+Watch Pods:
+
+```bash
+kubectl get pods -n project-12 --watch
+```
+
+Stop watching with:
+
+```text
+Ctrl + C
+```
+
 ---
 
-## Interview Summary
+# Key Flow to Remember
 
-> **A Kubernetes Job is used to run a task until it completes successfully. A CronJob is used to create Jobs automatically according to a defined schedule.**
+```text
+Job
+ ↓
+Pod
+ ↓
+Task
+ ↓
+Completed
+```
+
+```text
+CronJob
+ ↓
+Job
+ ↓
+Pod
+ ↓
+Task
+ ↓
+Completed
+```
+
+## Interview Answer
+
+> **A Kubernetes Job is used to run a task until it completes successfully. A CronJob is used to run Jobs automatically according to a defined schedule.**
 
 ## Project 12 Status: ✅ Completed
