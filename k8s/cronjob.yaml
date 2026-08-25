@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: CronJob
+
+metadata:
+  name: hello-cronjob
+  namespace: project-12
+
+spec:
+  schedule: "*/1 * * * *"
+
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+
+          containers:
+            - name: hello
+              image: busybox
+
+              command:
+                - /bin/sh
+                - -c
+                - echo "Hello from Kubernetes CronJob"
